@@ -185,11 +185,29 @@ $('toggle-custom').addEventListener('click', () => {
   setCustomMode(next);
   $('toggle-custom').textContent = next ? '↩ Vælg en fast ret' : '＋ Opret en ny ret';
 });
-// Navne i fælles tilmeldinger grupperes uanset rækkefølge:
-// "Alexander og Michala" og "Michala og Alexander" er samme gruppe.
+// Navne normaliseres ved visning og oprettelse, så store/små bogstaver
+// og kendte kælenavne ikke skaber forskellige personkort.
+const personAliases = {
+  'annette': 'Moster',
+  'moster': 'Moster',
+  'cecilia': 'Cecilia',
+  'alexander': 'Alexander',
+  'michala': 'Michala',
+  'litha': 'Litha',
+  'søren': 'Søren',
+  'jonas': 'Jonas'
+};
+function canonicalSingleName(value) {
+  const clean = String(value ?? '').trim().replace(/\s+/g, ' ');
+  const key = clean.toLocaleLowerCase('da');
+  if (personAliases[key]) return personAliases[key];
+  // Ukendte navne får ens visning, også hvis nogen skriver dem med små bogstaver.
+  return clean.toLocaleLowerCase('da').replace(/(^|[\s-])([a-zæøå])/g,
+    (_, prefix, letter) => prefix + letter.toLocaleUpperCase('da'));
+}
 function canonicalPersonName(value) {
   const parts = String(value ?? '').trim().split(/\s+og\s+/i)
-    .map(part => part.trim().replace(/\s+/g, ' ')).filter(Boolean);
+    .map(canonicalSingleName).filter(Boolean);
   if (parts.length > 1) {
     const unique = [...new Map(parts.map(part => [part.toLocaleLowerCase('da'), part])).values()];
     unique.sort((a, b) => a.localeCompare(b, 'da'));
@@ -244,11 +262,10 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault();
   setMessage(formMessage, '');
   if (!firebaseReady) { setMessage(formMessage, 'Hjemmesiden mangler Firebase-opsætning. Følg vejledningen i README-filen.'); return; }
-  const name = nameInput.value.trim();
+  const name = canonicalPersonName(nameInput.value);
   const suggestionOnly = !customRow.hidden && !bringCustom.checked;
   const dish = select.value === '__custom__' ? customInput.value.trim() : select.value;
   const isCustom = select.value === '__custom__';
-  const category = isCustom ? categoryForDish(dish) : '';
   if (!suggestionOnly && !name) { setMessage(formMessage, 'Skriv dit navn, før du tilmelder dig.'); nameInput.focus(); return; }
   if (!dish || dish === '__custom__') { setMessage(formMessage, 'Vælg en ret eller skriv navnet på en ny ret.'); return; }
   if (isTaken(dish)) { setMessage(formMessage, 'Den ret er allerede valgt. Vælg en anden ret.'); renderSuggestions(); return; }
@@ -260,7 +277,7 @@ form.addEventListener('submit', async (event) => {
     }
     submitButton.disabled = true;
     try {
-      await addDoc(collection(db, 'suggestions'), { dish, category, createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'suggestions'), { dish, createdAt: serverTimestamp() });
       setCustomMode(false);
       $('toggle-custom').textContent = '＋ Opret en ny ret';
       setMessage(formMessage, 'Forslaget er tilføjet! Ingen er tilmeldt retten.', true);
@@ -273,7 +290,7 @@ form.addEventListener('submit', async (event) => {
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true; submit.textContent = 'Tilføjer …';
   try {
-    await addDoc(collection(db, 'contributions'), { name, dish, ...(isCustom ? { category } : {}), createdAt: serverTimestamp() });
+    await addDoc(collection(db, 'contributions'), { name, dish, createdAt: serverTimestamp() });
     nameInput.value = '';
     if (select.value === '__custom__') { select.value = ''; customInput.value = ''; setCustomMode(false); $('toggle-custom').textContent = '＋ Opret en ny ret'; }
     else select.value = '';
@@ -317,7 +334,7 @@ $('import-agreed').addEventListener('click', async () => {
     // Brug addDoc i stedet for faste dokument-ID'er. Dette matcher gæsternes
     // oprettelsesmetode og Firestore-reglerne. Undgå dubletter via navn + ret.
     for (const [name, dish] of agreed) {
-      if (contributions.some(x => x.name.toLocaleLowerCase('da') === name.toLocaleLowerCase('da') && x.dish.toLocaleLowerCase('da') === dish.toLocaleLowerCase('da'))) {
+      if (contributions.some(x => canonicalPersonName(x.name) === canonicalPersonName(name) && x.dish.toLocaleLowerCase('da') === dish.toLocaleLowerCase('da'))) {
         skipped++;
         continue;
       }

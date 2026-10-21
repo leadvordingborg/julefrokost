@@ -108,3 +108,9 @@ Når en gæst opretter en ret, vælges kategori automatisk ud fra rettens navn. 
 
 ## Kategorirettelse
 Mandelgave genkendes som Dessert. Fejlmatch på delordet "and" i "mandelgave" er rettet, så and kun genkendes som fx andesteg eller andebryst. Ukendte retter vises under **💡 Andet**. Ændringen gælder også allerede oprettede forslag, da de kategoriseres på ny ved visning. Admins slet/skjul-funktioner er bevaret.
+
+## Rettelse permission-denied
+Retter kategoriseres nu kun i visningen. Nye forslag og tilmeldinger gemmes i Firestore uden `category`, så de eksisterende Firestore-regler for `suggestions` og `contributions` fortsat virker. Admin-skjul af faste forslag kræver stadig regler for `hiddenSuggestions`.
+
+## Navne og kælenavne
+Ved tilmelding og visning bliver navne ensrettet uanset store/små bogstaver. `cecilia`, `Cecilia` og `CECILIA` vises samlet under **Cecilia**. **Annette** og **Moster** vises samlet under **Moster**. Eksisterende Firestore-dokumenter ændres ikke; grupperingen sker på hjemmesiden. Fællesnavne som 'Michala og Alexander' grupperes stadig uanset rækkefølge. Ingen ændring af Firestore-regler nødvendig.
