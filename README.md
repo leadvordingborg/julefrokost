@@ -50,3 +50,7 @@ Du har allerede oprettet Cloud Firestore, slået Email/Password-login til og pub
 - Fiskefilet med tilbehør er samlet under Søren; brød og smør er registreret separat på Jonas.
 - Vigtigt: Filerne skal uploades til GitHub som erstatning for de gamle. Der er ikke behov for at ændre Firestore-reglerne.
 - Arrangørens sletteknap kan fjerne både importerede og almindelige tilmeldinger. Genimport genskaber slettede importerede retter; undlad derfor at bruge importknappen igen efter manuel oprydning.
+
+
+## Rettelse af importknappen
+Importen viser nu status og konkrete Firebase-fejl direkte under knappen. Den bruger samme `addDoc`-oprettelse som gæsternes tilmeldinger og springer allerede tilmeldte kombinationer af navn og ret over. Upload alle filerne og vent på GitHub Pages-udrulningen; opdater eventuelt med Ctrl+F5.

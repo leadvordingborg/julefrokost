@@ -12,3 +12,5 @@
 .suggestion-chip { cursor:pointer; background:#fffdf8; color:#234b39; border:1px solid #d8ded1; padding:9px 13px; border-radius:24px; font:inherit; font-size:.9rem; }
 .suggestion-chip:hover, .suggestion-chip:focus-visible { border-color:#235e43; background:#eaf2e8; }
 .admin-status { flex-wrap:wrap; gap:10px; }
+
+.import-message{flex-basis:100%;margin:0;color:#285f43;font-size:13px;font-weight:600;overflow-wrap:anywhere}

@@ -153,20 +153,41 @@ $('admin-form').addEventListener('submit', async (event) => {
 });
 $('admin-logout').addEventListener('click', () => signOut(auth));
 $('import-agreed').addEventListener('click', async () => {
-  if (!isAdmin || !db) return;
-  if (!confirm('Indlæs de 19 aftalte retter med navne? Eksisterende importerede retter bliver ikke overskrevet.')) return;
-  const button = $('import-agreed'); button.disabled = true;
+  const button = $('import-agreed');
+  const status = $('import-message');
+  status.textContent = 'Starter import …';
+  if (!isAdmin || !db) {
+    status.textContent = 'Du skal være logget ind som arrangør, og Firebase skal være forbundet.';
+    return;
+  }
+  if (!confirm('Vil du indlæse de 19 aftalte retter? Allerede eksisterende tilmeldinger springes over.')) {
+    status.textContent = 'Import annulleret.';
+    return;
+  }
+  button.disabled = true;
   let created = 0, skipped = 0;
   try {
-    for (let i = 0; i < agreed.length; i++) {
-      const ref = doc(db, 'contributions', `aftalt-2026-${String(i+1).padStart(2,'0')}`);
-      if ((await getDoc(ref)).exists()) { skipped++; continue; }
-      await setDoc(ref, {name: agreed[i][0], dish: agreed[i][1], createdAt: serverTimestamp()});
+    // Brug addDoc i stedet for faste dokument-ID'er. Dette matcher gæsternes
+    // oprettelsesmetode og Firestore-reglerne. Undgå dubletter via navn + ret.
+    for (const [name, dish] of agreed) {
+      if (contributions.some(x => x.name.toLocaleLowerCase('da') === name.toLocaleLowerCase('da') && x.dish.toLocaleLowerCase('da') === dish.toLocaleLowerCase('da'))) {
+        skipped++;
+        continue;
+      }
+      status.textContent = `Indlæser ${created + skipped + 1} af ${agreed.length}: ${dish} …`;
+      await addDoc(collection(db, 'contributions'), { name, dish, createdAt: serverTimestamp() });
+      // Opdatér lokalt med det samme for at undgå dubletter, hvis snapshot er forsinket.
+      contributions.push({name, dish});
       created++;
     }
-    alert(`Færdig! ${created} aftaler indlæst, ${skipped} var allerede indlæst.`);
-  } catch (err) { console.error(err); alert(`Der blev indlæst ${created} aftaler, men importen stoppede. Prøv igen efter at have tjekket reglerne.`); }
-  finally { button.disabled = false; }
+    status.textContent = `Færdig! ${created} retter indlæst, ${skipped} fandtes allerede.`;
+    renderList();
+  } catch (err) {
+    console.error('Importfejl:', err);
+    status.textContent = `Import stoppede efter ${created} retter. Firebase-fejl: ${err.code || err.message || 'Ukendt fejl'}.`;
+  } finally {
+    button.disabled = false;
+  }
 });
 
 
