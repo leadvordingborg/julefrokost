@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123b2d">
+  <meta name="description" content="Koordinér julefrokosten – skriv dit navn ud for det, du tager med.">
+  <title>Julefrokost 🎄</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="snow snow-one" aria-hidden="true">✳</div>
+  <div class="snow snow-two" aria-hidden="true">❄</div>
+  <div class="snow snow-three" aria-hidden="true">✦</div>
+  <header class="hero">
+    <div class="garland" aria-hidden="true"><span>✦</span> ✧ ━━━━━━━ ✧ <span>✦</span> ━━━━━━━ ✧</div>
+    <div class="hero-content">
+      <div class="eyebrow"><span>✦</span> MAD · HYGGE · JUL <span>✦</span></div>
+      <h1>Julefrokost</h1>
+      <p class="hero-copy">Lad os fylde bordet med lækker mad og godt selskab.</p>
+      <div class="hero-note"><span aria-hidden="true">🎄</span> Vælg det, du tager med, og skriv dit navn</div>
+    </div>
+    <div class="ornament ornament-left" aria-hidden="true">✺</div>
+    <div class="ornament ornament-right" aria-hidden="true">✺</div>
+  </header>
+
+  <main class="page-wrap">
+    <section class="intro-row">
+      <div>
+        <p class="section-kicker">FÆLLES MADLISTE</p>
+        <h2>Hvem tager hvad med?</h2>
+        <p class="muted">Alle med linket kan tilføje sig og se listen blive opdateret.</p>
+      </div>
+      <div class="count-card"><span class="count-icon">🍽️</span><div><strong id="total-count">0</strong><span>tilmeldinger</span></div></div>
+    </section>
+
+    <section class="signup-card" aria-labelledby="signup-heading">
+      <div class="card-heading">
+        <div class="heading-icon">✍️</div>
+        <div><h3 id="signup-heading">Jeg tager med</h3><p>Husk at skrive dit navn – så ved vi, hvem der kommer med hvad.</p></div>
+      </div>
+      <form id="signup-form">
+        <div class="form-grid">
+          <label class="field"><span>Hvad tager du med?</span>
+            <select id="dish-select" required>
+              <option value="" selected disabled>Vælg en ret …</option>
+            </select>
+          </label>
+          <label class="field"><span>Dit navn <b class="required">*</b></span>
+            <input id="guest-name" type="text" maxlength="60" placeholder="Skriv dit navn" autocomplete="name" required>
+          </label>
+        </div>
+        <div class="custom-row" id="custom-row" hidden>
+          <label class="field"><span>Navn på den nye ret</span><input id="custom-dish" type="text" maxlength="80" placeholder="Fx hjemmelavet rødkål"></label>
+        </div>
+        <div class="form-actions">
+          <button class="button button-primary" type="submit"><span>＋</span> Tilføj mig på listen</button>
+          <button class="button button-secondary" id="toggle-custom" type="button">＋ Opret en ny ret</button>
+        </div>
+        <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="list-section" aria-labelledby="list-heading">
+      <div class="list-title-row"><div><p class="section-kicker">DET STORE JULEBORD</p><h2 id="list-heading">Madlisten</h2></div><span class="live-pill"><span class="live-dot"></span> Fælles liste</span></div>
+      <div id="loading" class="loading"><span class="spinner"></span> Henter madlisten …</div>
+      <div id="empty-state" class="empty-state" hidden><span>🕯️</span><h3>Listen er klar til jer</h3><p>Vær den første til at vælge en ret og skrive dit navn.</p></div>
+      <div id="contribution-list" class="contribution-list"></div>
+      <p class="list-footnote">Har du valgt forkert? Spørg arrangøren, som kan fjerne tilmeldingen.</p>
+    </section>
+
+    <section class="admin-section">
+      <button type="button" id="admin-toggle" class="admin-link">Arrangør? <span>Administrér listen</span></button>
+      <form id="admin-form" class="admin-form" hidden>
+        <p>Log ind for at fjerne forkerte eller uønskede tilmeldinger.</p>
+        <label class="field"><span>Arrangørens e-mail</span><input id="admin-email" type="email" autocomplete="username" required></label>
+        <label class="field"><span>Adgangskode</span><input id="admin-password" type="password" autocomplete="current-password" required></label>
+        <div class="form-actions"><button class="button button-primary" type="submit">Log ind</button><button class="button button-secondary" id="admin-cancel" type="button">Annuller</button></div>
+        <p id="admin-message" class="form-message" role="status"></p>
+      </form>
+      <div id="admin-status" class="admin-status" hidden><span>Du er logget ind som arrangør.</span><button class="button button-secondary button-small" id="admin-logout" type="button">Log ud</button></div>
+    </section>
+
+    <footer class="footer"><div class="footer-stars">✧ ❄ ✧</div><p>Lav mad med kærlighed, og kom med julehumøret 🎅</p><span>Glædelig jul!</span></footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
