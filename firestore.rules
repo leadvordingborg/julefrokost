@@ -2,50 +2,46 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
-      return request.auth != null && request.auth.token.email is string && request.auth.token.email.lower() == 'alexander.madsen@me.com';
+      return request.auth != null
+        && request.auth.token.email is string
+        && request.auth.token.email.lower() == 'alexander.madsen@me.com';
     }
-
-    // Faste forslag kan skjules af arrangøren for alle besøgende.
-    match /hiddenSuggestions/{id} {
+    match /suggestions/{id} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /categories/{categoryId} {
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['title', 'createdAt'])
-        && request.resource.data.keys().hasAll(['title', 'createdAt'])
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 45
-        && request.resource.data.createdAt == request.time;
-      allow update: if false;
-      allow delete: if isAdmin();
-    }
-
-    match /suggestions/{suggestionId} {
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['dish', 'category', 'createdAt'])
+      allow create: if request.resource.data.keys().hasOnly(['dish', 'createdAt'])
         && request.resource.data.keys().hasAll(['dish', 'createdAt'])
-        && (!('category' in request.resource.data) || (request.resource.data.category is string && request.resource.data.category.size() > 0 && request.resource.data.category.size() <= 45))
         && request.resource.data.dish is string
         && request.resource.data.dish.size() > 0
         && request.resource.data.dish.size() <= 80
         && request.resource.data.createdAt == request.time;
-      allow update: if false;
       allow delete: if isAdmin();
+      allow update: if false;
     }
-
-    match /contributions/{contributionId} {
+    match /contributions/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['name', 'dish', 'category', 'createdAt'])
-        && (!('category' in request.resource.data) || (request.resource.data.category is string && request.resource.data.category.size() > 0 && request.resource.data.category.size() <= 45))
+      allow create: if request.resource.data.keys().hasOnly(['name', 'dish', 'createdAt'])
+        && request.resource.data.keys().hasAll(['name', 'dish', 'createdAt'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 60
         && request.resource.data.dish is string
         && request.resource.data.dish.size() > 0
         && request.resource.data.dish.size() <= 80
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isAdmin();
+      allow update: if false;
+    }
+    match /hiddenSuggestions/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /categories/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['title', 'createdAt'])
+        && request.resource.data.keys().hasAll(['title', 'createdAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 45
         && request.resource.data.createdAt == request.time;
       allow delete: if isAdmin();
       allow update: if false;

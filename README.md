@@ -114,3 +114,5 @@ Retter kategoriseres nu kun i visningen. Nye forslag og tilmeldinger gemmes i Fi
 
 ## Navne og kælenavne
 Ved tilmelding og visning bliver navne ensrettet uanset store/små bogstaver. `cecilia`, `Cecilia` og `CECILIA` vises samlet under **Cecilia**. **Annette** og **Moster** vises samlet under **Moster**. Eksisterende Firestore-dokumenter ændres ikke; grupperingen sker på hjemmesiden. Fællesnavne som 'Michala og Alexander' grupperes stadig uanset rækkefølge. Ingen ændring af Firestore-regler nødvendig.
+
+VIGTIGT: Publicer firestore.rules i Firebase Console > Firestore Database > Rules. Upload af filen til GitHub ændrer ikke de aktive Firebase-regler.
