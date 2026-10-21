@@ -36,3 +36,6 @@
 .custom-choice input{width:19px;min-height:19px;height:19px;flex:0 0 19px;margin:3px 0 0;accent-color:#123b2d}
 .custom-choice span{display:flex;flex-direction:column;gap:2px;font-size:13px;color:#123b2d}
 .custom-choice small{font-size:12px;color:#647367}
+
+.contact-note{display:flex;align-items:flex-start;gap:9px;margin:14px 0 0;padding:12px 14px;border:1px solid #e4dfd1;border-radius:12px;background:#f8f6ee;color:#405148;font-size:13px;line-height:1.55}
+.contact-note strong{color:#123b2d}

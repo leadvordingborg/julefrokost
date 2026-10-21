@@ -81,3 +81,7 @@ Du skal ikke importere de aftalte retter igen, og eksisterende tilmeldinger beva
 
 ## Ny ret eller kun forslag
 Klik **Opret en ny ret** øverst. Fluebenet **Jeg tager selv retten med** er slået til som standard. Fjern det for kun at oprette et forslag uden navn. Forslag gemmes i `suggestions`, tilmeldinger i `contributions`. Den nederste ekstra formular er fjernet. Firestore-reglerne er uændrede fra forrige version.
+
+
+## Besked ved forkert tilmelding
+Under tilmeldingsknapperne står nu en diskret besked om at kontakte Alexander ved fejl eller ønskede ændringer. Ingen ændringer i Firebase eller sikkerhedsregler er nødvendige.
