@@ -39,3 +39,10 @@
 
 .contact-note{display:flex;align-items:flex-start;gap:9px;margin:14px 0 0;padding:12px 14px;border:1px solid #e4dfd1;border-radius:12px;background:#f8f6ee;color:#405148;font-size:13px;line-height:1.55}
 .contact-note strong{color:#123b2d}
+
+/* Lille afkrydsningsfelt i stedet for browserens store input-felt */
+.custom-choice{display:flex;align-items:center;gap:12px;cursor:pointer}
+.custom-choice input[type="checkbox"]{appearance:auto!important;-webkit-appearance:checkbox!important;display:inline-block!important;position:static!important;flex:0 0 18px!important;width:18px!important;height:18px!important;min-height:18px!important;max-width:18px!important;margin:0!important;padding:0!important;box-shadow:none!important}
+.custom-choice .custom-choice-text{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.custom-choice .custom-choice-text strong{font-size:14px}
+.custom-choice .custom-choice-text small{font-size:12px;line-height:1.45}

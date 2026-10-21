@@ -125,6 +125,7 @@ function setCustomMode(on) {
   customRow.hidden = !on;
   customInput.required = on;
   bringCustom.closest('.custom-choice').hidden = !on;
+  if (on) bringCustom.checked = true;
   updateCustomChoice();
   if (on) { select.value = '__custom__'; customInput.focus(); }
   else { customInput.value = ''; if (select.value === '__custom__') select.value = ''; }
@@ -133,6 +134,7 @@ function updateCustomChoice() {
   const suggestionOnly = !customRow.hidden && !bringCustom.checked;
   nameInput.required = !suggestionOnly;
   nameInput.closest('.field').hidden = suggestionOnly;
+  $('signup-heading').textContent = suggestionOnly ? 'Foreslå en ret' : 'Jeg tager med';
   submitButton.innerHTML = suggestionOnly ? '＋ Tilføj kun forslag' : '<span>＋</span> Tilføj mig på listen';
 }
 bringCustom.addEventListener('change', updateCustomChoice);
@@ -236,7 +238,7 @@ form.addEventListener('submit', async (event) => {
     setMessage(formMessage, `Tak ${name}! Du er skrevet på til ${dish}.`, true);
   } catch (err) {
     console.error(err); setMessage(formMessage, 'Kunne ikke gemme tilmeldingen. Prøv igen om lidt.');
-  } finally { submit.disabled = false; submit.innerHTML = '<span>＋</span> Tilføj mig på listen'; }
+  } finally { submit.disabled = false; updateCustomChoice(); }
 });
 
 $('admin-toggle').addEventListener('click', () => {

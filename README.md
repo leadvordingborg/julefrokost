@@ -85,3 +85,7 @@ Klik **Opret en ny ret** øverst. Fluebenet **Jeg tager selv retten med** er sl�
 
 ## Besked ved forkert tilmelding
 Under tilmeldingsknapperne står nu en diskret besked om at kontakte Alexander ved fejl eller ønskede ændringer. Ingen ændringer i Firebase eller sikkerhedsregler er nødvendige.
+
+
+## Rettelse af forslag
+Ved 'Opret en ny ret' kan fluebenet 'Jeg tager selv retten med' fjernes. Navnefeltet skjules, og knappen ændres til 'Tilføj kun forslag'. Der er ingen separat formular nederst. Firebase-reglerne skal fortsat indeholde `suggestions`-samlingen som beskrevet i `firestore.rules`.
