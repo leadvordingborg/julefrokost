@@ -14,3 +14,14 @@
 .admin-status { flex-wrap:wrap; gap:10px; }
 
 .import-message{flex-basis:100%;margin:0;color:#285f43;font-size:13px;font-weight:600;overflow-wrap:anywhere}
+
+/* Tilmeldinger samlet pr. gæst i de eksisterende julekort */
+.contribution-list {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.person-card {background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 6px 20px rgba(26,53,39,.05);min-width:0}
+.person-header {display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.person-header h3 {font-family:'Playfair Display',serif;font-size:19px;color:var(--pine);margin:0;overflow-wrap:anywhere}
+.person-count {font-size:11px;color:var(--muted);white-space:nowrap}
+.person-dishes {padding-top:7px}
+.person-dish {display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0eee7;font-size:14px;overflow-wrap:anywhere}
+.person-dish:last-child {border-bottom:0}
+@media(max-width:620px){.contribution-list{grid-template-columns:1fr}}

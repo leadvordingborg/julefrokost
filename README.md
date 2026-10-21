@@ -54,3 +54,12 @@ Du har allerede oprettet Cloud Firestore, slået Email/Password-login til og pub
 
 ## Rettelse af importknappen
 Importen viser nu status og konkrete Firebase-fejl direkte under knappen. Den bruger samme `addDoc`-oprettelse som gæsternes tilmeldinger og springer allerede tilmeldte kombinationer af navn og ret over. Upload alle filerne og vent på GitHub Pages-udrulningen; opdater eventuelt med Ctrl+F5.
+
+
+## Opdatering: forslag og gruppering
+- Når en ret tilmeldes, forsvinder den fra forslag og rullemenu for alle, når Firestore synkroniserer.
+- Madlisten er grupperet alfabetisk efter person, med alle personens retter i samme kort.
+- Administrator kan stadig slette hver enkelt ret; så dukker forslaget op igen, hvis det findes i forslagslisten.
+- Fiskefilet med tilbehør dækker forslagene fiskefilet, remoulade og citron; rejer med tilbehør dækker rejer; brød dækker rugbrød og franskbrød som forslag.
+- Eksisterende Firebase-data bevares. Dette er en visnings- og brugerfladeændring; Firestore-reglerne behøver ikke ændres.
+- Bemærk: To personer, der tilmelder sig samtidigt, kan stadig nå at vælge samme ret. En helt hård unikhedsgaranti kræver servervalidering.

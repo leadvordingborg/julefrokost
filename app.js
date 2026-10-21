@@ -48,23 +48,47 @@ function setMessage(el, message, success = false) {
 function escapeText(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+// Forslag med andre betegnelser end de aftalte retter tæller også som optaget.
+const dishAliases = {
+  'fiskefilet': ['fiskefilet med remoulade og citron'],
+  'remoulade': ['fiskefilet med remoulade og citron'],
+  'citron': ['fiskefilet med remoulade og citron'],
+  'rejer': ['rejer med tilbehør'],
+  'rugbrød': ['brød'],
+  'franskbrød': ['brød'],
+  'marinerede sild – 3 glas': ['marinerede sild – 3 glas']
+};
+function normalizedDish(value) { return String(value).trim().toLocaleLowerCase('da'); }
+function isTaken(dish) {
+  const names = [dish, ...(dishAliases[normalizedDish(dish)] || [])].map(normalizedDish);
+  return contributions.some(item => names.includes(normalizedDish(item.dish)));
+}
+function availableCategories() {
+  return categories.map(cat => ({ ...cat, dishes: cat.dishes.filter(d => !isTaken(d)) }));
+}
 function populateDishOptions() {
+  const oldValue = select.value;
   select.innerHTML = '<option value="" selected disabled>Vælg en ret …</option>' +
-    categories.map(category => `<optgroup label="${escapeText(category.title)}">${category.dishes.map(d => `<option value="${escapeText(d)}">${escapeText(d)}</option>`).join('')}</optgroup>`).join('') +
-    '<option value="__custom__">＋ Jeg vil oprette en ny ret …</option>';
+    availableCategories().filter(c => c.dishes.length).map(category =>
+      `<optgroup label="${escapeText(category.title)}">${category.dishes.map(d => `<option value="${escapeText(d)}">${escapeText(d)}</option>`).join('')}</optgroup>`
+    ).join('') + '<option value="__custom__">＋ Jeg vil oprette en ny ret …</option>';
+  if (oldValue && [...select.options].some(o => o.value === oldValue)) select.value = oldValue;
+  else select.value = '';
 }
 function renderSuggestions() {
-  const taken = new Set(contributions.map(x => x.dish.toLocaleLowerCase('da')));
   const el = $('suggestions');
   el.innerHTML = '';
-  for (const category of categories) {
+  let remaining = 0;
+  for (const category of availableCategories()) {
+    if (!category.dishes.length) continue;
+    remaining += category.dishes.length;
     const section = document.createElement('section');
     section.className = 'suggestion-group';
     const heading = document.createElement('h3'); heading.textContent = category.title; section.appendChild(heading);
     const chips = document.createElement('div'); chips.className = 'suggestion-chips';
     for (const dish of category.dishes) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'suggestion-chip';
-      button.textContent = dish + (taken.has(dish.toLocaleLowerCase('da')) ? ' ✓' : ' ＋');
+      button.textContent = dish + ' ＋';
       button.addEventListener('click', () => {
         select.value = dish; setCustomMode(false); $('toggle-custom').textContent = '＋ Opret en ny ret';
         $('signup-heading').scrollIntoView({behavior:'smooth',block:'start'}); nameInput.focus();
@@ -73,6 +97,12 @@ function renderSuggestions() {
     }
     section.appendChild(chips); el.appendChild(section);
   }
+  if (!remaining) {
+    const p = document.createElement('p'); p.className = 'muted';
+    p.textContent = 'Alle forslag er valgt! Du kan stadig oprette en ny ret.';
+    el.appendChild(p);
+  }
+  populateDishOptions();
 }
 function setCustomMode(on) {
   customRow.hidden = !on;
@@ -93,24 +123,40 @@ function renderList() {
   emptyEl.hidden = contributions.length !== 0;
   listEl.innerHTML = '';
   renderSuggestions();
-  const sorted = [...contributions].sort((a,b) => a.dish.localeCompare(b.dish, 'da') || a.name.localeCompare(b.name, 'da'));
-  for (const item of sorted) {
+  const grouped = new Map();
+  for (const item of contributions) {
+    const name = item.name.trim();
+    const key = name.toLocaleLowerCase('da');
+    if (!grouped.has(key)) grouped.set(key, { name, items: [] });
+    grouped.get(key).items.push(item);
+  }
+  const groups = [...grouped.values()].sort((a,b) => a.name.localeCompare(b.name, 'da'));
+  for (const group of groups) {
     const card = document.createElement('article');
-    card.className = 'contribution';
-    const icon = icons[Math.abs([...item.dish].reduce((sum,c) => sum + c.charCodeAt(0), 0)) % icons.length];
-    card.innerHTML = `<div class="contribution-main"><div class="dish-icon" aria-hidden="true">${icon}</div><div class="dish-info"><strong>${escapeText(item.dish)}</strong><span>${escapeText(item.name)}</span></div></div>`;
-    if (isAdmin) {
-      const del = document.createElement('button');
-      del.type = 'button'; del.className = 'delete-button'; del.textContent = 'Slet';
-      del.setAttribute('aria-label', `Slet ${item.dish}, tilmeldt af ${item.name}`);
-      del.addEventListener('click', async () => {
-        if (!confirm(`Vil du slette tilmeldingen “${item.dish} — ${item.name}”?`)) return;
-        try { await deleteDoc(doc(db, 'contributions', item.id)); }
-        catch (err) { alert('Tilmeldingen kunne ikke slettes. Kontrollér, at du er logget ind som arrangør.'); console.error(err); }
-      });
-      card.appendChild(del);
+    card.className = 'person-card';
+    const header = document.createElement('div'); header.className = 'person-header';
+    const title = document.createElement('h3'); title.textContent = '🎁 ' + group.name;
+    const count = document.createElement('span'); count.className = 'person-count';
+    count.textContent = group.items.length + (group.items.length === 1 ? ' ret' : ' retter');
+    header.append(title, count); card.appendChild(header);
+    const itemsEl = document.createElement('div'); itemsEl.className = 'person-dishes';
+    for (const item of group.items.sort((a,b) => a.dish.localeCompare(b.dish,'da'))) {
+      const line = document.createElement('div'); line.className = 'person-dish';
+      const label = document.createElement('span'); label.textContent = '🍽️ ' + item.dish;
+      line.appendChild(label);
+      if (isAdmin) {
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'delete-button';
+        del.textContent = 'Slet'; del.setAttribute('aria-label', `Slet ${item.dish}, tilmeldt af ${item.name}`);
+        del.addEventListener('click', async () => {
+          if (!confirm(`Vil du slette tilmeldingen “${item.dish} — ${item.name}”?`)) return;
+          try { await deleteDoc(doc(db, 'contributions', item.id)); }
+          catch (err) { alert('Tilmeldingen kunne ikke slettes. Kontrollér arrangørlogin.'); console.error(err); }
+        });
+        line.appendChild(del);
+      }
+      itemsEl.appendChild(line);
     }
-    listEl.appendChild(card);
+    card.appendChild(itemsEl); listEl.appendChild(card);
   }
 }
 
@@ -122,6 +168,7 @@ form.addEventListener('submit', async (event) => {
   const dish = select.value === '__custom__' ? customInput.value.trim() : select.value;
   if (!name) { setMessage(formMessage, 'Skriv dit navn, før du tilmelder dig.'); nameInput.focus(); return; }
   if (!dish || dish === '__custom__') { setMessage(formMessage, 'Vælg en ret eller skriv navnet på en ny ret.'); return; }
+  if (isTaken(dish)) { setMessage(formMessage, 'Den ret er allerede valgt. Vælg en anden ret.'); renderSuggestions(); return; }
   if (name.length > 60 || dish.length > 80) { setMessage(formMessage, 'Navnet eller retten er for langt.'); return; }
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true; submit.textContent = 'Tilføjer …';
@@ -177,7 +224,6 @@ $('import-agreed').addEventListener('click', async () => {
       status.textContent = `Indlæser ${created + skipped + 1} af ${agreed.length}: ${dish} …`;
       await addDoc(collection(db, 'contributions'), { name, dish, createdAt: serverTimestamp() });
       // Opdatér lokalt med det samme for at undgå dubletter, hvis snapshot er forsinket.
-      contributions.push({name, dish});
       created++;
     }
     status.textContent = `Færdig! ${created} retter indlæst, ${skipped} fandtes allerede.`;
