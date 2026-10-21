@@ -2,7 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'Alexander.madsen@me.com';
+      return request.auth != null && request.auth.token.email is string && request.auth.token.email.lower() == 'alexander.madsen@me.com';
+    }
+
+    match /suggestions/{suggestionId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['dish', 'createdAt'])
+        && request.resource.data.keys().hasAll(['dish', 'createdAt'])
+        && request.resource.data.dish is string
+        && request.resource.data.dish.size() > 0
+        && request.resource.data.dish.size() <= 80
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     match /contributions/{contributionId} {

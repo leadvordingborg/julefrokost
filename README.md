@@ -2,6 +2,10 @@
 
 Denne version er **klar til upload til GitHub**. Firebase-konfigurationen i `app.js` og arrangørens e-mail i `firestore.rules` er udfyldt.
 
+## Rettelse af navnegruppering
+
+Navne som **Alexander og Michala** og **Michala og Alexander** vises nu automatisk i **én samlet boks**. Det gælder også andre par, der skrives i omvendt rækkefølge. Ændringen er kun i visningen: eksisterende Firestore-tilmeldinger bevares, og du skal ikke ændre sikkerhedsreglerne.
+
 ## Hvad er sat op?
 
 - Firebase-projekt: `julefrokost-30e8d`
@@ -63,3 +67,13 @@ Importen viser nu status og konkrete Firebase-fejl direkte under knappen. Den br
 - Fiskefilet med tilbehør dækker forslagene fiskefilet, remoulade og citron; rejer med tilbehør dækker rejer; brød dækker rugbrød og franskbrød som forslag.
 - Eksisterende Firebase-data bevares. Dette er en visnings- og brugerfladeændring; Firestore-reglerne behøver ikke ændres.
 - Bemærk: To personer, der tilmelder sig samtidigt, kan stadig nå at vælge samme ret. En helt hård unikhedsgaranti kræver servervalidering.
+
+
+## Nyt: Forslag uden tilmelding
+Gæster kan nu skrive en ret under **Foreslå en ret – uden at melde dig til**.
+Forslag gemmes i den særskilte Firestore-samling `suggestions` og vises for alle i realtid.
+Når nogen melder sig til retten med navn, forsvinder den fra forslagene og vises på madlisten.
+Kun arrangøren kan slette et forslag.
+
+**VIGTIGT:** Kopiér HELE indholdet af `firestore.rules` ind under Firebase → Cloud Firestore → Rules og tryk Publish. Ellers vil forslagene ikke kunne gemmes.
+Du skal ikke importere de aftalte retter igen, og eksisterende tilmeldinger bevares.

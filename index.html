@@ -69,8 +69,15 @@
     <section class="suggestions-section" aria-labelledby="suggestions-heading">
       <p class="section-kicker">INSPIRATION TIL BORDET</p>
       <h2 id="suggestions-heading">Forslag til retter</h2>
-      <p class="muted">Dette er kun forslag – ikke tilmeldinger. Tryk på en ret for at vælge den, og skriv dit navn.</p>
+      <p class="muted">Forslag er ikke tilmeldinger. Du kan også foreslå en ny ret uden selv at tage den med. Tryk på en ret, hvis du vil tage den med.</p>
       <div id="suggestions"></div>
+      <form id="suggestion-form" class="suggestion-add-form">
+        <label class="field" for="suggestion-dish"><span>💡 Foreslå en ret – uden at melde dig til</span>
+          <input id="suggestion-dish" type="text" maxlength="80" placeholder="Fx hønsesalat" required>
+        </label>
+        <button class="button button-secondary" type="submit">＋ Tilføj kun forslag</button>
+        <p class="form-message" id="suggestion-message" role="status" aria-live="polite"></p>
+      </form>
     </section>
 
     <section class="list-section" aria-labelledby="list-heading">

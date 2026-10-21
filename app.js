@@ -39,7 +39,7 @@ const formMessage = $('form-message');
 const listEl = $('contribution-list');
 const loadingEl = $('loading');
 const emptyEl = $('empty-state');
-let db, auth, contributions = [], isAdmin = false, firebaseReady = false;
+let db, auth, contributions = [], extraSuggestions = [], isAdmin = false, firebaseReady = false;
 
 function setMessage(el, message, success = false) {
   el.textContent = message;
@@ -64,7 +64,11 @@ function isTaken(dish) {
   return contributions.some(item => names.includes(normalizedDish(item.dish)));
 }
 function availableCategories() {
-  return categories.map(cat => ({ ...cat, dishes: cat.dishes.filter(d => !isTaken(d)) }));
+  const base = categories.map(cat => ({ ...cat, dishes: cat.dishes.filter(d => !isTaken(d)) }));
+  const known = new Set(categories.flatMap(cat => cat.dishes).map(normalizedDish));
+  const extra = extraSuggestions.filter(item => !known.has(normalizedDish(item.dish)) && !isTaken(item.dish));
+  if (extra.length) base.push({ title: '💡 Gæsternes forslag', dishes: extra.map(item => item.dish) });
+  return base;
 }
 function populateDishOptions() {
   const oldValue = select.value;
@@ -94,6 +98,17 @@ function renderSuggestions() {
         $('signup-heading').scrollIntoView({behavior:'smooth',block:'start'}); nameInput.focus();
       });
       chips.appendChild(button);
+      const suggestion = extraSuggestions.find(item => normalizedDish(item.dish) === normalizedDish(dish));
+      if (suggestion && isAdmin) {
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'delete-button';
+        del.textContent = 'Slet forslag'; del.setAttribute('aria-label', 'Slet forslag: ' + dish);
+        del.addEventListener('click', async () => {
+          if (!confirm('Slet forslaget “' + dish + '”?')) return;
+          try { await deleteDoc(doc(db, 'suggestions', suggestion.id)); }
+          catch (err) { console.error(err); alert('Kunne ikke slette forslaget: ' + (err.code || err.message)); }
+        });
+        chips.appendChild(del);
+      }
     }
     section.appendChild(chips); el.appendChild(section);
   }
@@ -117,6 +132,18 @@ $('toggle-custom').addEventListener('click', () => {
   setCustomMode(next);
   $('toggle-custom').textContent = next ? '↩ Vælg en fast ret' : '＋ Opret en ny ret';
 });
+// Navne i fælles tilmeldinger grupperes uanset rækkefølge:
+// "Alexander og Michala" og "Michala og Alexander" er samme gruppe.
+function canonicalPersonName(value) {
+  const parts = String(value ?? '').trim().split(/\s+og\s+/i)
+    .map(part => part.trim().replace(/\s+/g, ' ')).filter(Boolean);
+  if (parts.length > 1) {
+    const unique = [...new Map(parts.map(part => [part.toLocaleLowerCase('da'), part])).values()];
+    unique.sort((a, b) => a.localeCompare(b, 'da'));
+    return unique.join(' og ');
+  }
+  return parts[0] || '';
+}
 function renderList() {
   loadingEl.hidden = true;
   $('total-count').textContent = contributions.length;
@@ -125,7 +152,7 @@ function renderList() {
   renderSuggestions();
   const grouped = new Map();
   for (const item of contributions) {
-    const name = item.name.trim();
+    const name = canonicalPersonName(item.name);
     const key = name.toLocaleLowerCase('da');
     if (!grouped.has(key)) grouped.set(key, { name, items: [] });
     grouped.get(key).items.push(item);
@@ -181,6 +208,29 @@ form.addEventListener('submit', async (event) => {
   } catch (err) {
     console.error(err); setMessage(formMessage, 'Kunne ikke gemme tilmeldingen. Prøv igen om lidt.');
   } finally { submit.disabled = false; submit.innerHTML = '<span>＋</span> Tilføj mig på listen'; }
+});
+
+$('suggestion-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const message = $('suggestion-message');
+  const dish = $('suggestion-dish').value.trim();
+  if (!firebaseReady) { setMessage(message, 'Firebase er ikke forbundet.'); return; }
+  if (!dish || dish.length > 80) { setMessage(message, 'Skriv en ret på højst 80 tegn.'); return; }
+  if (isTaken(dish)) { setMessage(message, 'Retten er allerede tilmeldt af en gæst.'); return; }
+  if (categories.some(c => c.dishes.some(d => normalizedDish(d) === normalizedDish(dish))) ||
+      extraSuggestions.some(s => normalizedDish(s.dish) === normalizedDish(dish))) {
+    setMessage(message, 'Retten findes allerede blandt forslagene.'); return;
+  }
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    await addDoc(collection(db, 'suggestions'), { dish, createdAt: serverTimestamp() });
+    $('suggestion-dish').value = '';
+    setMessage(message, 'Tak! Forslaget er tilføjet, uden at du er tilmeldt.', true);
+  } catch (err) {
+    console.error('Forslagsfejl:', err);
+    setMessage(message, 'Kunne ikke gemme forslaget: ' + (err.code || err.message));
+  } finally { button.disabled = false; }
 });
 
 $('admin-toggle').addEventListener('click', () => {
@@ -259,6 +309,14 @@ function initFirebase() {
       console.error(err); loadingEl.hidden = true; emptyEl.hidden = false;
       emptyEl.querySelector('h3').textContent = 'Kunne ikke hente madlisten';
       emptyEl.querySelector('p').textContent = 'Tjek Firebase-opsætningen og Firestore-reglerne.';
+    });
+    onSnapshot(collection(db, 'suggestions'), snapshot => {
+      extraSuggestions = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(d => typeof d.dish === 'string');
+      renderSuggestions();
+    }, err => {
+      console.error('Forslag kunne ikke hentes:', err);
+      setMessage($('suggestion-message'), 'Forslag kan ikke hentes. Kontrollér Firestore-reglerne: ' + (err.code || err.message));
     });
     onAuthStateChanged(auth, user => {
       isAdmin = !!user && (user.email || '').toLowerCase() === 'alexander.madsen@me.com';
