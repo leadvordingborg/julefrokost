@@ -92,3 +92,16 @@ Ved 'Opret en ny ret' kan fluebenet 'Jeg tager selv retten med' fjernes. Navnefe
 
 ## Admin: slet forslag
 Når Alexander er logget ind, vises en **Slet**-knap ud for hvert forslag. Gæsteoprettede forslag slettes fra `suggestions`. Faste forslag skjules permanent via `hiddenSuggestions`, så de ikke dukker op igen ved genindlæsning. Det påvirker ikke eksisterende tilmeldinger. **VIGTIGT:** Publicér den opdaterede `firestore.rules` i Cloud Firestore → Rules, før knappen bruges. Hvis et fast forslag skal gendannes, kan dokumentet slettes manuelt i `hiddenSuggestions` i Firebase-konsollen.
+
+
+### Vigtigt: Sletning af de oprindelige forslag
+Gæsternes forslag ligger i `suggestions`, mens faste forslag ligger i hjemmesidens kode. Sletning af faste forslag gemmes derfor i `hiddenSuggestions` og kræver **Firestore-reglerne fra denne ZIP**. Gå til Cloud Firestore → Rules, indsæt HELE `firestore.rules`, og tryk Publish. Kontrollér at du er logget ind som arrangør. Ved `permission-denied` er reglerne eller login ikke korrekt.
+
+## Kategorier ved nye retter
+Vælg **Opret en ny ret**, og vælg kategori (fx 🍰 Dessert for slik). Du kan også vælge **Opret en ny kategori**. Det virker både for forslag uden tilmelding og retter, du selv tager med. Gæsternes forslag vises i den valgte kategori i stedet for automatisk i 'Gæsternes forslag'. Ældre forslag uden kategori fordeles efter kendte navne eller under 'Andre forslag'. Eksisterende tilmeldinger vises stadig i bokse grupperet efter navn.
+
+**Publicér `firestore.rules` igen:** Den nye version tillader valgfeltet `category` og samlingen `categories`. Eksisterende poster uden kategorifelt virker fortsat. Gæster kan oprette kategorier, men ikke slette dem.
+
+
+## Automatisk kategorisering
+Når en gæst opretter en ret, vælges kategori automatisk ud fra rettens navn. Fx **Slik → Dessert**, **Rugbrød → Brød og tilbehør**. Ukendte retter vises under **Andre forslag**. Der er ikke længere noget manuelt kategorivalg. Eksisterende forslag kategoriseres også ud fra navnet, når siden opdateres. Denne version bruger lokale nøgleordsregler og kan derfor ikke genkende alle tænkelige retter. Firestore-reglerne kan forblive uændrede fra forrige version.

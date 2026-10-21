@@ -65,11 +65,30 @@ function isTaken(dish) {
   const names = [dish, ...(dishAliases[normalizedDish(dish)] || [])].map(normalizedDish);
   return contributions.some(item => names.includes(normalizedDish(item.dish)));
 }
+// Lokal, deterministisk sortering: ingen ekstern AI eller ekstra tjenester.
+// Ukendte retter går i Andre forslag i stedet for at blive gættet forkert.
+function categoryForDish(dish) {
+  const value = normalizedDish(dish).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const exact = categories.find(c => c.dishes.some(d => normalizedDish(d) === normalizedDish(dish)));
+  if (exact) return exact.title;
+  const rules = [
+    ['🍰 Dessert', /slik|bolsje|karamel|lakrids|vingummi|chokolade|konfekt|marcipan|nougat|dessert|kage|smakag|småkag|brownie|cookie|islagkage|risalamande|frugtsalat|jordbar|kirsebar|sovs til dessert|pandekag|aebleskiv|æbleskiv|flodeskum|flødeskum|panna cotta|mousse|tiramisu|budding/],
+    ['🥖 Brød og tilbehør', /rugbrod|rugbrød|franskbrod|franskbrød|brod|brød|baguette|flute|bolle|smor|smør|mayonnaise|mayo|remoulade|dressing|sennep|ristede log|ristede løg|citron|dild|karse|syltede|tilbehor|tilbehør/],
+    ['🧀 Ost og snacks', /ost|kiks|chips|snack|nodder|nødder|mandler|vindru|clementin|klementin|popcorn|saltstang|peanut|oliven/],
+    ['🐟 Fisk og pålæg', /sild|fisk|reje|laks|tun|skinke|pat[eé]|leverpostej|bacon|champignon|frikadell|flaskesteg|flæskesteg|rodka|rødkå|medister|tartelet|salat|æg|aeg|kylling|and|paleg|pålæg|roastbeef|hamburgerryg/],
+  ];
+  return rules.find(([,pattern]) => pattern.test(value))?.[0] || '💡 Andre forslag';
+}
 function availableCategories() {
   const base = categories.map(cat => ({ ...cat, dishes: cat.dishes.filter(d => !isTaken(d) && !hiddenSuggestions.has(normalizedDish(d))) }));
   const known = new Set(categories.flatMap(cat => cat.dishes).map(normalizedDish));
-  const extra = extraSuggestions.filter(item => !known.has(normalizedDish(item.dish)) && !isTaken(item.dish) && !hiddenSuggestions.has(normalizedDish(item.dish)));
-  if (extra.length) base.push({ title: '💡 Gæsternes forslag', dishes: extra.map(item => item.dish) });
+  for (const item of extraSuggestions) {
+    if (known.has(normalizedDish(item.dish)) || isTaken(item.dish) || hiddenSuggestions.has(normalizedDish(item.dish))) continue;
+    const title = categoryForDish(item.dish);
+    let group = base.find(c => c.title === title);
+    if (!group) { group = { title, dishes: [] }; base.push(group); }
+    if (!group.dishes.some(d => normalizedDish(d) === normalizedDish(item.dish))) group.dishes.push(item.dish);
+  }
   return base;
 }
 function populateDishOptions() {
@@ -118,9 +137,10 @@ function renderSuggestions() {
                 dish: dish, hiddenAt: serverTimestamp()
               });
             }
+            // Vent på liveopdatering; denne vises hos alle besøgende.
           } catch (err) {
             console.error('Kunne ikke slette forslag:', err);
-            alert('Forslaget kunne ikke slettes: ' + (err.code || err.message));
+            alert('Forslaget kunne ikke slettes (' + (err.code || 'ukendt fejl') + ').\n\nHvis det er et af de oprindelige forslag, skal du publicere firestore.rules fra ZIP-filen i Cloud Firestore → Rules.\n\nDetaljer: ' + err.message);
           } finally { del.disabled = false; }
         });
         const itemWrap = document.createElement('span');
@@ -226,6 +246,8 @@ form.addEventListener('submit', async (event) => {
   const name = nameInput.value.trim();
   const suggestionOnly = !customRow.hidden && !bringCustom.checked;
   const dish = select.value === '__custom__' ? customInput.value.trim() : select.value;
+  const isCustom = select.value === '__custom__';
+  const category = isCustom ? categoryForDish(dish) : '';
   if (!suggestionOnly && !name) { setMessage(formMessage, 'Skriv dit navn, før du tilmelder dig.'); nameInput.focus(); return; }
   if (!dish || dish === '__custom__') { setMessage(formMessage, 'Vælg en ret eller skriv navnet på en ny ret.'); return; }
   if (isTaken(dish)) { setMessage(formMessage, 'Den ret er allerede valgt. Vælg en anden ret.'); renderSuggestions(); return; }
@@ -237,7 +259,7 @@ form.addEventListener('submit', async (event) => {
     }
     submitButton.disabled = true;
     try {
-      await addDoc(collection(db, 'suggestions'), { dish, createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'suggestions'), { dish, category, createdAt: serverTimestamp() });
       setCustomMode(false);
       $('toggle-custom').textContent = '＋ Opret en ny ret';
       setMessage(formMessage, 'Forslaget er tilføjet! Ingen er tilmeldt retten.', true);
@@ -250,7 +272,7 @@ form.addEventListener('submit', async (event) => {
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true; submit.textContent = 'Tilføjer …';
   try {
-    await addDoc(collection(db, 'contributions'), { name, dish, createdAt: serverTimestamp() });
+    await addDoc(collection(db, 'contributions'), { name, dish, ...(isCustom ? { category } : {}), createdAt: serverTimestamp() });
     nameInput.value = '';
     if (select.value === '__custom__') { select.value = ''; customInput.value = ''; setCustomMode(false); $('toggle-custom').textContent = '＋ Opret en ny ret'; }
     else select.value = '';
@@ -299,7 +321,7 @@ $('import-agreed').addEventListener('click', async () => {
         continue;
       }
       status.textContent = `Indlæser ${created + skipped + 1} af ${agreed.length}: ${dish} …`;
-      await addDoc(collection(db, 'contributions'), { name, dish, createdAt: serverTimestamp() });
+    await addDoc(collection(db, 'contributions'), { name, dish, createdAt: serverTimestamp() });
       // Opdatér lokalt med det samme for at undgå dubletter, hvis snapshot er forsinket.
       created++;
     }

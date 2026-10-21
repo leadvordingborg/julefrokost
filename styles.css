@@ -49,3 +49,5 @@
 
 .suggestion-admin-item{display:inline-flex;align-items:center;gap:5px;flex-wrap:nowrap}
 .suggestion-admin-item .delete-button{margin-right:5px}
+
+.auto-category-note{margin:0 0 8px;font-size:13px;color:#62776b}
