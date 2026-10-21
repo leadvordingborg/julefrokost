@@ -89,3 +89,6 @@ Under tilmeldingsknapperne står nu en diskret besked om at kontakte Alexander v
 
 ## Rettelse af forslag
 Ved 'Opret en ny ret' kan fluebenet 'Jeg tager selv retten med' fjernes. Navnefeltet skjules, og knappen ændres til 'Tilføj kun forslag'. Der er ingen separat formular nederst. Firebase-reglerne skal fortsat indeholde `suggestions`-samlingen som beskrevet i `firestore.rules`.
+
+## Admin: slet forslag
+Når Alexander er logget ind, vises en **Slet**-knap ud for hvert forslag. Gæsteoprettede forslag slettes fra `suggestions`. Faste forslag skjules permanent via `hiddenSuggestions`, så de ikke dukker op igen ved genindlæsning. Det påvirker ikke eksisterende tilmeldinger. **VIGTIGT:** Publicér den opdaterede `firestore.rules` i Cloud Firestore → Rules, før knappen bruges. Hvis et fast forslag skal gendannes, kan dokumentet slettes manuelt i `hiddenSuggestions` i Firebase-konsollen.

@@ -41,7 +41,7 @@ const formMessage = $('form-message');
 const listEl = $('contribution-list');
 const loadingEl = $('loading');
 const emptyEl = $('empty-state');
-let db, auth, contributions = [], extraSuggestions = [], isAdmin = false, firebaseReady = false;
+let db, auth, contributions = [], extraSuggestions = [], hiddenSuggestions = new Set(), isAdmin = false, firebaseReady = false;
 
 function setMessage(el, message, success = false) {
   el.textContent = message;
@@ -66,9 +66,9 @@ function isTaken(dish) {
   return contributions.some(item => names.includes(normalizedDish(item.dish)));
 }
 function availableCategories() {
-  const base = categories.map(cat => ({ ...cat, dishes: cat.dishes.filter(d => !isTaken(d)) }));
+  const base = categories.map(cat => ({ ...cat, dishes: cat.dishes.filter(d => !isTaken(d) && !hiddenSuggestions.has(normalizedDish(d))) }));
   const known = new Set(categories.flatMap(cat => cat.dishes).map(normalizedDish));
-  const extra = extraSuggestions.filter(item => !known.has(normalizedDish(item.dish)) && !isTaken(item.dish));
+  const extra = extraSuggestions.filter(item => !known.has(normalizedDish(item.dish)) && !isTaken(item.dish) && !hiddenSuggestions.has(normalizedDish(item.dish)));
   if (extra.length) base.push({ title: '💡 Gæsternes forslag', dishes: extra.map(item => item.dish) });
   return base;
 }
@@ -99,17 +99,36 @@ function renderSuggestions() {
         select.value = dish; setCustomMode(false); $('toggle-custom').textContent = '＋ Opret en ny ret';
         $('signup-heading').scrollIntoView({behavior:'smooth',block:'start'}); nameInput.focus();
       });
-      chips.appendChild(button);
-      const suggestion = extraSuggestions.find(item => normalizedDish(item.dish) === normalizedDish(dish));
-      if (suggestion && isAdmin) {
-        const del = document.createElement('button'); del.type = 'button'; del.className = 'delete-button';
-        del.textContent = 'Slet forslag'; del.setAttribute('aria-label', 'Slet forslag: ' + dish);
+      if (isAdmin) {
+        const suggestion = extraSuggestions.find(item => normalizedDish(item.dish) === normalizedDish(dish));
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'delete-button';
+        del.textContent = 'Slet';
+        del.setAttribute('aria-label', 'Slet forslag: ' + dish);
         del.addEventListener('click', async () => {
-          if (!confirm('Slet forslaget “' + dish + '”?')) return;
-          try { await deleteDoc(doc(db, 'suggestions', suggestion.id)); }
-          catch (err) { console.error(err); alert('Kunne ikke slette forslaget: ' + (err.code || err.message)); }
+          if (!confirm('Vil du fjerne forslaget “' + dish + '” fra listen?')) return;
+          del.disabled = true;
+          try {
+            if (suggestion) {
+              await deleteDoc(doc(db, 'suggestions', suggestion.id));
+            } else {
+              // Faste forslag findes i kildekoden og skjules derfor i Firestore.
+              await setDoc(doc(db, 'hiddenSuggestions', encodeURIComponent(normalizedDish(dish))), {
+                dish: dish, hiddenAt: serverTimestamp()
+              });
+            }
+          } catch (err) {
+            console.error('Kunne ikke slette forslag:', err);
+            alert('Forslaget kunne ikke slettes: ' + (err.code || err.message));
+          } finally { del.disabled = false; }
         });
-        chips.appendChild(del);
+        const itemWrap = document.createElement('span');
+        itemWrap.className = 'suggestion-admin-item';
+        itemWrap.append(button, del);
+        chips.appendChild(itemWrap);
+      } else {
+        chips.appendChild(button);
       }
     }
     section.appendChild(chips); el.appendChild(section);
@@ -321,16 +340,25 @@ function initFirebase() {
     onSnapshot(collection(db, 'suggestions'), snapshot => {
       extraSuggestions = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
         .filter(d => typeof d.dish === 'string');
-      renderSuggestions();
+      renderSuggestions(); populateDishOptions();
     }, err => {
       console.error('Forslag kunne ikke hentes:', err);
       setMessage(formMessage, 'Forslag kan ikke hentes. Kontrollér Firestore-reglerne: ' + (err.code || err.message));
+    });
+    onSnapshot(collection(db, 'hiddenSuggestions'), snapshot => {
+      hiddenSuggestions = new Set(snapshot.docs.map(d => normalizedDish(d.data().dish || '')));
+      renderSuggestions();
+      populateDishOptions();
+    }, err => {
+      console.error('Skjulte forslag kunne ikke hentes:', err);
+      setMessage(formMessage, 'Skjulte forslag kunne ikke hentes: ' + (err.code || err.message));
     });
     onAuthStateChanged(auth, user => {
       isAdmin = !!user && (user.email || '').toLowerCase() === 'alexander.madsen@me.com';
       $('admin-status').hidden = !isAdmin;
       $('admin-toggle').hidden = isAdmin;
       renderList();
+      renderSuggestions();
     });
   } catch (err) {
     console.error(err); loadingEl.hidden = true;

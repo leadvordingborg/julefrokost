@@ -46,3 +46,6 @@
 .custom-choice .custom-choice-text{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
 .custom-choice .custom-choice-text strong{font-size:14px}
 .custom-choice .custom-choice-text small{font-size:12px;line-height:1.45}
+
+.suggestion-admin-item{display:inline-flex;align-items:center;gap:5px;flex-wrap:nowrap}
+.suggestion-admin-item .delete-button{margin-right:5px}
