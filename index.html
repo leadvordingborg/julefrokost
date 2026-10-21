@@ -37,6 +37,8 @@
       <div class="count-card"><span class="count-icon">🍽️</span><div><strong id="total-count">0</strong><span>tilmeldinger</span></div></div>
     </section>
 
+    <div class="bring-drinks">🥤 <strong>Drikkevarer:</strong> Alle tager selv deres drikkevarer med.</div>
+
     <section class="signup-card" aria-labelledby="signup-heading">
       <div class="card-heading">
         <div class="heading-icon">✍️</div>
@@ -64,6 +66,13 @@
       </form>
     </section>
 
+    <section class="suggestions-section" aria-labelledby="suggestions-heading">
+      <p class="section-kicker">INSPIRATION TIL BORDET</p>
+      <h2 id="suggestions-heading">Forslag til retter</h2>
+      <p class="muted">Dette er kun forslag – ikke tilmeldinger. Tryk på en ret for at vælge den, og skriv dit navn.</p>
+      <div id="suggestions"></div>
+    </section>
+
     <section class="list-section" aria-labelledby="list-heading">
       <div class="list-title-row"><div><p class="section-kicker">DET STORE JULEBORD</p><h2 id="list-heading">Madlisten</h2></div><span class="live-pill"><span class="live-dot"></span> Fælles liste</span></div>
       <div id="loading" class="loading"><span class="spinner"></span> Henter madlisten …</div>
@@ -81,7 +90,7 @@
         <div class="form-actions"><button class="button button-primary" type="submit">Log ind</button><button class="button button-secondary" id="admin-cancel" type="button">Annuller</button></div>
         <p id="admin-message" class="form-message" role="status"></p>
       </form>
-      <div id="admin-status" class="admin-status" hidden><span>Du er logget ind som arrangør.</span><button class="button button-secondary button-small" id="admin-logout" type="button">Log ud</button></div>
+      <div id="admin-status" class="admin-status" hidden><span>Du er logget ind som arrangør.</span><button class="button button-secondary button-small" id="import-agreed" type="button">🎄 Indlæs aftalte retter</button><button class="button button-secondary button-small" id="admin-logout" type="button">Log ud</button></div>
     </section>
 
     <footer class="footer"><div class="footer-stars">✧ ❄ ✧</div><p>Lav mad med kærlighed, og kom med julehumøret 🎅</p><span>Glædelig jul!</span></footer>

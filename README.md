@@ -39,3 +39,14 @@ Du har allerede oprettet Cloud Firestore, slået Email/Password-login til og pub
 - Alle kan i princippet tilføje tilmeldinger; den offentlige formular er ikke beskyttet mod spam.
 - Gæster kan ikke selv ændre/slette tilmeldinger; arrangøren kan slette dem.
 - Forudbestemte retter kan ændres i `defaultDishes` i `app.js`.
+
+
+## Opdateret madliste (oktober 2026)
+
+- Alle forslag vises under **Forslag til retter** og er **ikke** tilmeldinger.
+- Aftalerne fra familietråden importeres ved at logge ind som arrangør og klikke **🎄 Indlæs aftalte retter**. Det er kun nødvendigt én gang. Gentagne klik springer allerede importerede poster over.
+- Før importen er madlisten tom (medmindre der allerede er registreret tilmeldinger).
+- Drikkevarer er ikke en tilmeldingsret: Alle medbringer selv drikkevarer.
+- Fiskefilet med tilbehør er samlet under Søren; brød og smør er registreret separat på Jonas.
+- Vigtigt: Filerne skal uploades til GitHub som erstatning for de gamle. Der er ikke behov for at ændre Firestore-reglerne.
+- Arrangørens sletteknap kan fjerne både importerede og almindelige tilmeldinger. Genimport genskaber slettede importerede retter; undlad derfor at bruge importknappen igen efter manuel oprydning.

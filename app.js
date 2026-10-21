@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, setDoc, onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
 
 // Firebase-konfiguration til julefrokost-30e8d (allerede udfyldt).
@@ -12,12 +12,21 @@ const firebaseConfig = {
   appId: '1:707518291596:web:d972074e3f212558caa5a9'
 };
 
-const defaultDishes = [
-  'Frikadeller', 'Fiskefilet', 'Flæskesteg', 'Medisterpølse', 'Leverpostej',
-  'Rugbrød', 'Franskbrød', 'Smør', 'Sild', 'Rejer', 'Æg og mayonnaise',
-  'Lun leverpostej med bacon', 'Rødkål', 'Brune kartofler', 'Hvide kartofler',
-  'Sovs', 'Grøn salat', 'Ost', 'Chips og snacks', 'Risalamande', 'Kirsebærsauce',
-  'Kage', 'Slik og konfekt', 'Drikkevarer'
+const categories = [
+  { title: '🐟 Fisk og pålæg', dishes: ['Marinerede sild – 3 glas', 'Karrysalat', 'Fiskefilet', 'Remoulade', 'Rejer', 'Æg', 'Leverpostej', 'Bacon', 'Champignon', 'Frikadeller', 'Flæskesteg', 'Rødkål', 'Medisterpølse', 'Tunsalat', 'Laks med tilbehør', 'Tarteletter'] },
+  { title: '🥖 Brød og tilbehør', dishes: ['Rugbrød', 'Franskbrød', 'Smør', 'Mayonnaise', 'Ristede løg', 'Citron', 'Dild og karse – et par bundter'] },
+  { title: '🧀 Ost og snacks', dishes: ['Ost', 'Kiks', 'Vindruer', 'Chips', 'Nødder', 'Clementiner'] },
+  { title: '🍰 Dessert', dishes: ['Risalamande', 'Kirsebærsovs', 'Jordbærsovs', 'Småkager', 'Chokolade', 'Frugtsalat'] }
+];
+// Allerede aftalt i familietråden. Importeres én gang af arrangøren.
+const agreed = [
+  ['Litha', 'Tunsalat'], ['Litha', 'Rejer med tilbehør'], ['Litha', 'Laks med tilbehør'],
+  ['Litha', 'Ost'], ['Litha', 'Kiks'], ['Litha', 'Frugtsalat'], ['Litha', 'Marinerede sild – 3 glas'],
+  ['Søren', 'Fiskefilet med remoulade og citron'], ['Moster', 'Tarteletter'],
+  ['Michala og Alexander', 'Risalamande'], ['Michala og Alexander', 'Kirsebærsovs'],
+  ['Michala og Alexander', 'Jordbærsovs'], ['Michala og Alexander', 'Frikadeller'],
+  ['Cecilia', 'Æg'], ['Cecilia', 'Leverpostej'], ['Cecilia', 'Bacon'], ['Cecilia', 'Champignon'],
+  ['Jonas', 'Brød'], ['Jonas', 'Smør']
 ];
 const icons = ['🍽️','🥔','🥗','🧀','🍞','🐟','🥧','🍰','🥤','🎄'];
 const $ = (id) => document.getElementById(id);
@@ -41,8 +50,29 @@ function escapeText(value) {
 }
 function populateDishOptions() {
   select.innerHTML = '<option value="" selected disabled>Vælg en ret …</option>' +
-    defaultDishes.map(d => `<option value="${escapeText(d)}">${escapeText(d)}</option>`).join('') +
+    categories.map(category => `<optgroup label="${escapeText(category.title)}">${category.dishes.map(d => `<option value="${escapeText(d)}">${escapeText(d)}</option>`).join('')}</optgroup>`).join('') +
     '<option value="__custom__">＋ Jeg vil oprette en ny ret …</option>';
+}
+function renderSuggestions() {
+  const taken = new Set(contributions.map(x => x.dish.toLocaleLowerCase('da')));
+  const el = $('suggestions');
+  el.innerHTML = '';
+  for (const category of categories) {
+    const section = document.createElement('section');
+    section.className = 'suggestion-group';
+    const heading = document.createElement('h3'); heading.textContent = category.title; section.appendChild(heading);
+    const chips = document.createElement('div'); chips.className = 'suggestion-chips';
+    for (const dish of category.dishes) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'suggestion-chip';
+      button.textContent = dish + (taken.has(dish.toLocaleLowerCase('da')) ? ' ✓' : ' ＋');
+      button.addEventListener('click', () => {
+        select.value = dish; setCustomMode(false); $('toggle-custom').textContent = '＋ Opret en ny ret';
+        $('signup-heading').scrollIntoView({behavior:'smooth',block:'start'}); nameInput.focus();
+      });
+      chips.appendChild(button);
+    }
+    section.appendChild(chips); el.appendChild(section);
+  }
 }
 function setCustomMode(on) {
   customRow.hidden = !on;
@@ -62,6 +92,7 @@ function renderList() {
   $('total-count').textContent = contributions.length;
   emptyEl.hidden = contributions.length !== 0;
   listEl.innerHTML = '';
+  renderSuggestions();
   const sorted = [...contributions].sort((a,b) => a.dish.localeCompare(b.dish, 'da') || a.name.localeCompare(b.name, 'da'));
   for (const item of sorted) {
     const card = document.createElement('article');
@@ -121,6 +152,23 @@ $('admin-form').addEventListener('submit', async (event) => {
   }
 });
 $('admin-logout').addEventListener('click', () => signOut(auth));
+$('import-agreed').addEventListener('click', async () => {
+  if (!isAdmin || !db) return;
+  if (!confirm('Indlæs de 19 aftalte retter med navne? Eksisterende importerede retter bliver ikke overskrevet.')) return;
+  const button = $('import-agreed'); button.disabled = true;
+  let created = 0, skipped = 0;
+  try {
+    for (let i = 0; i < agreed.length; i++) {
+      const ref = doc(db, 'contributions', `aftalt-2026-${String(i+1).padStart(2,'0')}`);
+      if ((await getDoc(ref)).exists()) { skipped++; continue; }
+      await setDoc(ref, {name: agreed[i][0], dish: agreed[i][1], createdAt: serverTimestamp()});
+      created++;
+    }
+    alert(`Færdig! ${created} aftaler indlæst, ${skipped} var allerede indlæst.`);
+  } catch (err) { console.error(err); alert(`Der blev indlæst ${created} aftaler, men importen stoppede. Prøv igen efter at have tjekket reglerne.`); }
+  finally { button.disabled = false; }
+});
+
 
 function initFirebase() {
   const configMissing = Object.values(firebaseConfig).some(v => String(v).startsWith('INDSÆT_'));
