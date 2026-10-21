@@ -57,9 +57,10 @@
         </div>
         <div class="custom-row" id="custom-row" hidden>
           <label class="field"><span>Navn på den nye ret</span><input id="custom-dish" type="text" maxlength="80" placeholder="Fx hjemmelavet rødkål"></label>
+          <label class="custom-choice"><input type="checkbox" id="bring-custom" checked><span><strong>Jeg tager selv retten med</strong><small>Fjern fluebenet, hvis retten kun skal være et forslag.</small></span></label>
         </div>
         <div class="form-actions">
-          <button class="button button-primary" type="submit"><span>＋</span> Tilføj mig på listen</button>
+          <button class="button button-primary" type="submit" id="signup-submit"><span>＋</span> Tilføj mig på listen</button>
           <button class="button button-secondary" id="toggle-custom" type="button">＋ Opret en ny ret</button>
         </div>
         <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
@@ -69,15 +70,8 @@
     <section class="suggestions-section" aria-labelledby="suggestions-heading">
       <p class="section-kicker">INSPIRATION TIL BORDET</p>
       <h2 id="suggestions-heading">Forslag til retter</h2>
-      <p class="muted">Forslag er ikke tilmeldinger. Du kan også foreslå en ny ret uden selv at tage den med. Tryk på en ret, hvis du vil tage den med.</p>
+      <p class="muted">Forslag er ikke tilmeldinger. Brug “Opret en ny ret” øverst, hvis du vil foreslå noget uden selv at tage det med. Tryk på en ret, hvis du vil tage den med.</p>
       <div id="suggestions"></div>
-      <form id="suggestion-form" class="suggestion-add-form">
-        <label class="field" for="suggestion-dish"><span>💡 Foreslå en ret – uden at melde dig til</span>
-          <input id="suggestion-dish" type="text" maxlength="80" placeholder="Fx hønsesalat" required>
-        </label>
-        <button class="button button-secondary" type="submit">＋ Tilføj kun forslag</button>
-        <p class="form-message" id="suggestion-message" role="status" aria-live="polite"></p>
-      </form>
     </section>
 
     <section class="list-section" aria-labelledby="list-heading">

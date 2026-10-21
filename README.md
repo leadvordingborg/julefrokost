@@ -77,3 +77,7 @@ Kun arrangøren kan slette et forslag.
 
 **VIGTIGT:** Kopiér HELE indholdet af `firestore.rules` ind under Firebase → Cloud Firestore → Rules og tryk Publish. Ellers vil forslagene ikke kunne gemmes.
 Du skal ikke importere de aftalte retter igen, og eksisterende tilmeldinger bevares.
+
+
+## Ny ret eller kun forslag
+Klik **Opret en ny ret** øverst. Fluebenet **Jeg tager selv retten med** er slået til som standard. Fjern det for kun at oprette et forslag uden navn. Forslag gemmes i `suggestions`, tilmeldinger i `contributions`. Den nederste ekstra formular er fjernet. Firestore-reglerne er uændrede fra forrige version.

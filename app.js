@@ -34,6 +34,8 @@ const select = $('dish-select');
 const customRow = $('custom-row');
 const customInput = $('custom-dish');
 const nameInput = $('guest-name');
+const bringCustom = $('bring-custom');
+const submitButton = $('signup-submit');
 const form = $('signup-form');
 const formMessage = $('form-message');
 const listEl = $('contribution-list');
@@ -122,9 +124,18 @@ function renderSuggestions() {
 function setCustomMode(on) {
   customRow.hidden = !on;
   customInput.required = on;
+  bringCustom.closest('.custom-choice').hidden = !on;
+  updateCustomChoice();
   if (on) { select.value = '__custom__'; customInput.focus(); }
   else { customInput.value = ''; if (select.value === '__custom__') select.value = ''; }
 }
+function updateCustomChoice() {
+  const suggestionOnly = !customRow.hidden && !bringCustom.checked;
+  nameInput.required = !suggestionOnly;
+  nameInput.closest('.field').hidden = suggestionOnly;
+  submitButton.innerHTML = suggestionOnly ? '＋ Tilføj kun forslag' : '<span>＋</span> Tilføj mig på listen';
+}
+bringCustom.addEventListener('change', updateCustomChoice);
 function updateDishMode() { setCustomMode(select.value === '__custom__'); }
 select.addEventListener('change', updateDishMode);
 $('toggle-custom').addEventListener('click', () => {
@@ -192,11 +203,29 @@ form.addEventListener('submit', async (event) => {
   setMessage(formMessage, '');
   if (!firebaseReady) { setMessage(formMessage, 'Hjemmesiden mangler Firebase-opsætning. Følg vejledningen i README-filen.'); return; }
   const name = nameInput.value.trim();
+  const suggestionOnly = !customRow.hidden && !bringCustom.checked;
   const dish = select.value === '__custom__' ? customInput.value.trim() : select.value;
-  if (!name) { setMessage(formMessage, 'Skriv dit navn, før du tilmelder dig.'); nameInput.focus(); return; }
+  if (!suggestionOnly && !name) { setMessage(formMessage, 'Skriv dit navn, før du tilmelder dig.'); nameInput.focus(); return; }
   if (!dish || dish === '__custom__') { setMessage(formMessage, 'Vælg en ret eller skriv navnet på en ny ret.'); return; }
   if (isTaken(dish)) { setMessage(formMessage, 'Den ret er allerede valgt. Vælg en anden ret.'); renderSuggestions(); return; }
   if (name.length > 60 || dish.length > 80) { setMessage(formMessage, 'Navnet eller retten er for langt.'); return; }
+  if (suggestionOnly) {
+    if (categories.some(c => c.dishes.some(d => normalizedDish(d) === normalizedDish(dish))) ||
+        extraSuggestions.some(s => normalizedDish(s.dish) === normalizedDish(dish))) {
+      setMessage(formMessage, 'Retten findes allerede blandt forslagene.'); return;
+    }
+    submitButton.disabled = true;
+    try {
+      await addDoc(collection(db, 'suggestions'), { dish, createdAt: serverTimestamp() });
+      setCustomMode(false);
+      $('toggle-custom').textContent = '＋ Opret en ny ret';
+      setMessage(formMessage, 'Forslaget er tilføjet! Ingen er tilmeldt retten.', true);
+    } catch (err) {
+      console.error('Forslagsfejl:', err);
+      setMessage(formMessage, 'Kunne ikke gemme forslaget: ' + (err.code || err.message));
+    } finally { submitButton.disabled = false; updateCustomChoice(); }
+    return;
+  }
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true; submit.textContent = 'Tilføjer …';
   try {
@@ -208,29 +237,6 @@ form.addEventListener('submit', async (event) => {
   } catch (err) {
     console.error(err); setMessage(formMessage, 'Kunne ikke gemme tilmeldingen. Prøv igen om lidt.');
   } finally { submit.disabled = false; submit.innerHTML = '<span>＋</span> Tilføj mig på listen'; }
-});
-
-$('suggestion-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const message = $('suggestion-message');
-  const dish = $('suggestion-dish').value.trim();
-  if (!firebaseReady) { setMessage(message, 'Firebase er ikke forbundet.'); return; }
-  if (!dish || dish.length > 80) { setMessage(message, 'Skriv en ret på højst 80 tegn.'); return; }
-  if (isTaken(dish)) { setMessage(message, 'Retten er allerede tilmeldt af en gæst.'); return; }
-  if (categories.some(c => c.dishes.some(d => normalizedDish(d) === normalizedDish(dish))) ||
-      extraSuggestions.some(s => normalizedDish(s.dish) === normalizedDish(dish))) {
-    setMessage(message, 'Retten findes allerede blandt forslagene.'); return;
-  }
-  const button = event.currentTarget.querySelector('button[type="submit"]');
-  button.disabled = true;
-  try {
-    await addDoc(collection(db, 'suggestions'), { dish, createdAt: serverTimestamp() });
-    $('suggestion-dish').value = '';
-    setMessage(message, 'Tak! Forslaget er tilføjet, uden at du er tilmeldt.', true);
-  } catch (err) {
-    console.error('Forslagsfejl:', err);
-    setMessage(message, 'Kunne ikke gemme forslaget: ' + (err.code || err.message));
-  } finally { button.disabled = false; }
 });
 
 $('admin-toggle').addEventListener('click', () => {
@@ -316,7 +322,7 @@ function initFirebase() {
       renderSuggestions();
     }, err => {
       console.error('Forslag kunne ikke hentes:', err);
-      setMessage($('suggestion-message'), 'Forslag kan ikke hentes. Kontrollér Firestore-reglerne: ' + (err.code || err.message));
+      setMessage(formMessage, 'Forslag kan ikke hentes. Kontrollér Firestore-reglerne: ' + (err.code || err.message));
     });
     onAuthStateChanged(auth, user => {
       isAdmin = !!user && (user.email || '').toLowerCase() === 'alexander.madsen@me.com';
@@ -330,4 +336,5 @@ function initFirebase() {
   }
 }
 populateDishOptions();
+setCustomMode(false);
 initFirebase();
