@@ -66,18 +66,19 @@ function isTaken(dish) {
   return contributions.some(item => names.includes(normalizedDish(item.dish)));
 }
 // Lokal, deterministisk sortering: ingen ekstern AI eller ekstra tjenester.
-// Ukendte retter går i Andre forslag i stedet for at blive gættet forkert.
+// Ukendte retter går i Andet i stedet for at blive gættet forkert.
 function categoryForDish(dish) {
   const value = normalizedDish(dish).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/mandel[ -]?gave(r|n)?/.test(value)) return '💡 Andet';
   const exact = categories.find(c => c.dishes.some(d => normalizedDish(d) === normalizedDish(dish)));
   if (exact) return exact.title;
   const rules = [
     ['🍰 Dessert', /slik|bolsje|karamel|lakrids|vingummi|chokolade|konfekt|marcipan|nougat|dessert|kage|smakag|småkag|brownie|cookie|islagkage|risalamande|frugtsalat|jordbar|kirsebar|sovs til dessert|pandekag|aebleskiv|æbleskiv|flodeskum|flødeskum|panna cotta|mousse|tiramisu|budding/],
     ['🥖 Brød og tilbehør', /rugbrod|rugbrød|franskbrod|franskbrød|brod|brød|baguette|flute|bolle|smor|smør|mayonnaise|mayo|remoulade|dressing|sennep|ristede log|ristede løg|citron|dild|karse|syltede|tilbehor|tilbehør/],
     ['🧀 Ost og snacks', /ost|kiks|chips|snack|nodder|nødder|mandler|vindru|clementin|klementin|popcorn|saltstang|peanut|oliven/],
-    ['🐟 Fisk og pålæg', /sild|fisk|reje|laks|tun|skinke|pat[eé]|leverpostej|bacon|champignon|frikadell|flaskesteg|flæskesteg|rodka|rødkå|medister|tartelet|salat|æg|aeg|kylling|and|paleg|pålæg|roastbeef|hamburgerryg/],
+    ['🐟 Fisk og pålæg', /sild|fisk|reje|laks|tun|skinke|pat[eé]|leverpostej|bacon|champignon|frikadell|flaskesteg|flæskesteg|rodka|rødkå|medister|tartelet|salat|æg|aeg|kylling|andesteg|andebryst|andekod|andekød|paleg|pålæg|roastbeef|hamburgerryg/],
   ];
-  return rules.find(([,pattern]) => pattern.test(value))?.[0] || '💡 Andre forslag';
+  return rules.find(([,pattern]) => pattern.test(value))?.[0] || '💡 Andet';
 }
 function availableCategories() {
   const base = categories.map(cat => ({ ...cat, dishes: cat.dishes.filter(d => !isTaken(d) && !hiddenSuggestions.has(normalizedDish(d))) }));

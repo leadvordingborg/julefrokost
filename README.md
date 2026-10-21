@@ -105,3 +105,6 @@ Vælg **Opret en ny ret**, og vælg kategori (fx 🍰 Dessert for slik). Du kan 
 
 ## Automatisk kategorisering
 Når en gæst opretter en ret, vælges kategori automatisk ud fra rettens navn. Fx **Slik → Dessert**, **Rugbrød → Brød og tilbehør**. Ukendte retter vises under **Andre forslag**. Der er ikke længere noget manuelt kategorivalg. Eksisterende forslag kategoriseres også ud fra navnet, når siden opdateres. Denne version bruger lokale nøgleordsregler og kan derfor ikke genkende alle tænkelige retter. Firestore-reglerne kan forblive uændrede fra forrige version.
+
+## Kategorirettelse
+Mandelgave genkendes som Dessert. Fejlmatch på delordet "and" i "mandelgave" er rettet, så and kun genkendes som fx andesteg eller andebryst. Ukendte retter vises under **💡 Andet**. Ændringen gælder også allerede oprettede forslag, da de kategoriseres på ny ved visning. Admins slet/skjul-funktioner er bevaret.
