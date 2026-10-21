@@ -13,7 +13,7 @@ service cloud.firestore {
         && request.resource.data.dish is string
         && request.resource.data.dish.size() > 0
         && request.resource.data.dish.size() <= 80
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt is timestamp;
       allow delete: if isAdmin();
       allow update: if false;
     }
@@ -27,7 +27,7 @@ service cloud.firestore {
         && request.resource.data.dish is string
         && request.resource.data.dish.size() > 0
         && request.resource.data.dish.size() <= 80
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt is timestamp;
       allow delete: if isAdmin();
       allow update: if false;
     }
@@ -42,7 +42,7 @@ service cloud.firestore {
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 45
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt is timestamp;
       allow delete: if isAdmin();
       allow update: if false;
     }

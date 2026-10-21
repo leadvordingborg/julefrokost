@@ -51,3 +51,5 @@
 .suggestion-admin-item .delete-button{margin-right:5px}
 
 .auto-category-note{margin:0 0 8px;font-size:13px;color:#62776b}
+
+.hero-date{font-weight:700;letter-spacing:.045em;font-size:clamp(1rem,2.2vw,1.3rem);margin:8px 0 12px;color:inherit}
